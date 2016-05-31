@@ -110,15 +110,13 @@
 			this.btnConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-			this.btnConnect.Enabled = false;
 			this.btnConnect.Font = new System.Drawing.Font("Microsoft Sans Serif", 25F);
-			this.btnConnect.Location = new System.Drawing.Point(28, 219);
+			this.btnConnect.Location = new System.Drawing.Point(20, 223);
 			this.btnConnect.Name = "btnConnect";
 			this.btnConnect.Size = new System.Drawing.Size(344, 113);
 			this.btnConnect.TabIndex = 4;
 			this.btnConnect.Text = "Reconnect";
 			this.btnConnect.UseVisualStyleBackColor = true;
-			this.btnConnect.Visible = false;
 			this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
 			// 
 			// lblWho
@@ -203,7 +201,7 @@
 			this.lblDc.Anchor = System.Windows.Forms.AnchorStyles.None;
 			this.lblDc.AutoSize = true;
 			this.lblDc.Font = new System.Drawing.Font("Microsoft Sans Serif", 23F);
-			this.lblDc.Location = new System.Drawing.Point(17, 106);
+			this.lblDc.Location = new System.Drawing.Point(9, 104);
 			this.lblDc.Name = "lblDc";
 			this.lblDc.Size = new System.Drawing.Size(366, 35);
 			this.lblDc.TabIndex = 5;

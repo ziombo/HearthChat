@@ -12,11 +12,12 @@ namespace HearthChatWinform
 {
 	public class NameGetter
 	{
-		static FileSystemWatcher watch;
-		static int lineCounter = 0;
-		static string bothNames = null;
-		static string currentMatchPlayers = null;
-		static bool gameEnded;
+		static FileSystemWatcher fileWatcher;		// watches HS log file
+		static int GlobalLineCounter = 0;			// used to omit already read lines
+		static string bothNames = null;				// used to create SignalR group
+		static string currentMatchPlayers = null;	// used to display in lblWho
+		static bool gameEnded = true;               // used to determine if there's ongoing match
+		static string[] names = new string[2];
 
 		public static bool GameEnded
 		{
@@ -31,38 +32,50 @@ namespace HearthChatWinform
 			get { return currentMatchPlayers; }
 		}
 
+
+		/// <summary>
+		///	Searches for players name
+		/// </summary>
 		public static void FindNames(string hsPath)
 		{
 			int playersRead = 0;
-			int counter = lineCounter;
-			string line;
-			string[] names = new string[2];
+			int localLineCounter = GlobalLineCounter;
+			string currentLine;
 			using (var fileStream = new FileStream(hsPath+@"\output_log.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 			using (var file = new StreamReader(fileStream, Encoding.Default))
 			{
-				for (var i = 0; i < counter; i++)
+				for (int lineToOmit = 0; lineToOmit < localLineCounter; lineToOmit++)
 				{
-					line = file.ReadLine();
+					currentLine = file.ReadLine();
 				}
-
-				Regex opponent = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=[a-zA-Z0-9]+ tag=TEAM_ID value=\d");
-				Regex gameFinished = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=[a-zA-Z0-9]+ tag=PLAYSTATE value=WON");
+				//.{0,20} still testing
+				//[a-zA-Z0-9]+ doesn't work with cyrylic etc.
+				Regex player = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=.{0,20} tag=TEAM_ID value=\d");
+				Regex gameFinished = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=.{0,20} tag=PLAYSTATE value=WON");
 
 				if (bothNames == null)
 				{
-					while ((line = file.ReadLine()) != null && playersRead < 2)
+					while ((currentLine = file.ReadLine()) != null && playersRead < 2)
 					{
-						if (opponent.IsMatch(line))
+						if (player.IsMatch(currentLine))
 						{
-							names[playersRead] = line.Substring(line.IndexOf(@"Entity") + 7, line.IndexOf(@" tag") - line.IndexOf(@"Entity") - 7);
+							// extract player name from currentLine
+							names[playersRead] = currentLine.Substring(currentLine.IndexOf(@"Entity") + 7, currentLine.IndexOf(@" tag") - currentLine.IndexOf(@"Entity") - 7);
 							playersRead++;
-							lineCounter = counter;
+							GlobalLineCounter = localLineCounter;
+
 							if (names[0] != null && names[1] != null)
 							{
+								// encoding names so that cyrylic and other weirdos show as ? rather than even more weird symbols (than cyrylic itself)
+								byte[] bytes = Encoding.Default.GetBytes(names[0]);
+								names[0] = Encoding.UTF8.GetString(bytes);
+								byte[] bytes2 = Encoding.Default.GetBytes(names[1]);
+								names[1] = Encoding.UTF8.GetString(bytes2);
+
+								gameEnded = false;
 								Array.Sort(names);
-								string roomFromNames = names[0] + names[1];
 								currentMatchPlayers = names[0] + " vs " + names[1];
-								bothNames = roomFromNames;
+								bothNames = names[0] + names[1];
 								Form1.GroupConnect();
 								names[0] = null;
 								names[1] = null;
@@ -70,54 +83,60 @@ namespace HearthChatWinform
 								break;
 							}
 						}
-						counter++;
+						localLineCounter++;
 					}
 				}
 				if (bothNames != null)
 				{
-					while ((line = file.ReadLine()) != null)
+					while ((currentLine = file.ReadLine()) != null)
 					{
-						if (gameFinished.IsMatch(line))
+						if (gameFinished.IsMatch(currentLine))
 						{
 							Form1.GroupDisconnect();
 							bothNames = null;
 							currentMatchPlayers = null;
-							lineCounter = counter;
+							GlobalLineCounter = localLineCounter;
 							gameEnded = true;
 							break;
 						}
-						counter++;
+						localLineCounter++;
 					}
 				}
 			}
 		}
 
+		/// <summary>
+		/// Every 1second(for the first 10, every 2 later) checks if log file changes
+		/// </summary>
 		public static void StartedWatcher(string hsPath)
 		{
 			TimerExampleState s = new TimerExampleState();
-			TimerCallback timerDelegate =(sender) => CheckStatus(sender, hsPath);
+			TimerCallback timerDelegate = (sender) => CheckStatus(sender, hsPath);
 			Timer timer = new Timer(timerDelegate, s, 1000, 1000);
 			s.tmr = timer;
 
-			watch = new FileSystemWatcher();
-			watch.Path = hsPath;
-			watch.Filter = "output_log.txt";
-			watch.NotifyFilter = NotifyFilters.Attributes |
+			fileWatcher = new FileSystemWatcher();
+			fileWatcher.Path = hsPath;
+			fileWatcher.Filter = "output_log.txt";
+			fileWatcher.NotifyFilter = NotifyFilters.Attributes |
 				NotifyFilters.CreationTime |
 				NotifyFilters.FileName |
 				NotifyFilters.LastAccess |
 				NotifyFilters.LastWrite |
 				NotifyFilters.Size |
 				NotifyFilters.Security;
-			watch.Changed += (sender, args) => IfStarted(sender, args, hsPath);
-			watch.Created += (sender, args) => IfStarted(sender, args, hsPath);
-			watch.Deleted += (sender, args) => IfStarted(sender, args, hsPath);
-			watch.Renamed += (sender, args) => IfStarted(sender, args, hsPath);
+			fileWatcher.Changed += (sender, args) => FindNames(hsPath);
+			fileWatcher.Created += (sender, args) => FindNames(hsPath);
+			fileWatcher.Deleted += (sender, args) => FindNames(hsPath);
+			fileWatcher.Renamed += (sender, args) => FindNames(hsPath);
 
-			watch.EnableRaisingEvents = true;
-			GC.KeepAlive(watch);
+			fileWatcher.EnableRaisingEvents = true;
+			GC.KeepAlive(fileWatcher);
 		}
 
+		/// <summary>
+		/// Every 1second(for the first 10, every 2 later) writes into log file to make watcher aknowledge changes
+		/// </summary>
 		public static void CheckStatus(Object state, string hsPath)
 		{
 			TimerExampleState s = (TimerExampleState)state;
@@ -135,22 +154,64 @@ namespace HearthChatWinform
 			}
 		}
 
-		public static void IfStarted(object source, FileSystemEventArgs e, string hsPath)
+
+		/// <summary>
+		/// Read through HS log to ignore past matches if there are any
+		/// </summary>
+		public static void CheckLogFile(string hsPath)
 		{
-			string line;
-			using (var fileStream = new FileStream(hsPath+@"\output_log.txt", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
+			using (var fileStream = new FileStream(hsPath + @"\output_log.txt", FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
 			using (var file = new StreamReader(fileStream, Encoding.Default))
 			{
-				Regex gameStarted = new Regex(@"\[LoadingScreen\] Gameplay.Start\(\)");
+				Regex opponent = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=.{0,20} tag=TEAM_ID value=\d");
+				Regex gameFinished = new Regex(@"\[Power\]\sGameState.DebugPrintPower\(\) - TAG_CHANGE Entity=.{0,20} tag=PLAYSTATE value=WON");
+				string line;
+				int playersRead = 0;
+
 				while ((line = file.ReadLine()) != null)
 				{
-					if (gameStarted.IsMatch(line))
+					GlobalLineCounter++;
+
+					if (opponent.IsMatch(line))
 					{
-						FindNames(hsPath);
-						gameEnded = false;
-						break;
+						names[playersRead] = line.Substring(line.IndexOf(@"Entity") + 7, line.IndexOf(@" tag") - line.IndexOf(@"Entity") - 7);
+						playersRead++;
+						if(names[0] != null && names[1] != null)
+						{
+							// encoding names so that cyrylic and other weirdos show as ? rather than even more weird symbols (than cyrylic itself)
+							byte[] bytes = Encoding.Default.GetBytes(names[0]);
+							names[0] = Encoding.UTF8.GetString(bytes);
+							byte[] bytes2 = Encoding.Default.GetBytes(names[1]);
+							names[1] = Encoding.UTF8.GetString(bytes2);
+
+							gameEnded = false;				
+						}
+					}
+					if (gameFinished.IsMatch(line))
+					{
+						playersRead = 0;
+						gameEnded = true;
+						names[0] = null;
+						names[1] = null;
 					}
 				}
+
+				if(gameEnded == false)
+				{
+					// safety check
+					if (names[0] != null && names[1] != null)
+					{		
+						gameEnded = false;
+						Array.Sort(names);
+						currentMatchPlayers = names[0] + " vs " + names[1];
+						bothNames = names[0] + names[1];
+						Form1.GroupConnect();
+						names[0] = null;
+						names[1] = null;
+						playersRead = 0;
+					}
+				}
+				StartedWatcher(hsPath);
 			}
 		}
 	}

@@ -14,8 +14,8 @@ namespace HearthChatWinform
 		static string user = Environment.UserName;
 		static string path = @"C:\Users\" + user + @"\AppData\Local\HearthChat";
 
-		public async static Task<Tuple<bool, string>> IsHsRunning()
-		{
+		public async static Task<Tuple<bool, bool, string>> IsHsRunning()
+		{		
 			var createLog = Task.Factory.StartNew<bool>(() =>
 			{
 				string username = Environment.UserName;
@@ -90,45 +90,52 @@ ConsolePrinting = true");
 			});
 
 
-			var getHsPath = Task.Factory.StartNew<string>(() =>
+			var isWhereHsRunning = Task.Factory.StartNew<Tuple<bool, string>>(() =>
 		   {
-			   Process[] processCheck = Process.GetProcessesByName("Hearthstone");
-			   if (processCheck.Length == 0)
+		   Process[] processCheck = Process.GetProcessesByName("Hearthstone");
+		   // HS not running
+		   if (processCheck.Length == 0)
+		   {
+			   var query = new WqlEventQuery(
+				  "__InstanceCreationEvent",
+				  new TimeSpan(0, 0, 1),
+				  "TargetInstance isa \"Win32_Process\" and TargetInstance.Name = \"Hearthstone.exe\""
+				);
+
+			   using (var watcher = new ManagementEventWatcher(query))
 			   {
-				   var query = new WqlEventQuery(
-					  "__InstanceCreationEvent",
-					  new TimeSpan(0, 0, 1),
-					  "TargetInstance isa \"Win32_Process\" and TargetInstance.Name = \"Hearthstone.exe\""
-					);
+				   ManagementBaseObject e = watcher.WaitForNextEvent();
 
-				   using (var watcher = new ManagementEventWatcher(query))
-				   {
-					   ManagementBaseObject e = watcher.WaitForNextEvent();
+				   var hsProcess = Process.GetProcessesByName("Hearthstone");
+				   string filePath = hsProcess[0].MainModule.FileName;
+				   int index = filePath.LastIndexOf(@"\");
+				   string path = filePath.Remove(index + 1);
+				   watcher.Stop();
 
-					   var hsProcess = Process.GetProcessesByName("Hearthstone");
-					   string filePath = hsProcess[0].MainModule.FileName;
-					   int index = filePath.LastIndexOf(@"\");
-					   string path = filePath.Remove(index + 1);
-					   watcher.Stop();
-					   return path;
+				   Tuple<bool, string> isAlrdyRunning = new Tuple<bool, string>(false, path);
+				   return isAlrdyRunning;
 				   }
 			   }
+			   // HS already running
 			   else
 			   {
 				   string filePath = processCheck[0].MainModule.FileName;
 				   int index = filePath.LastIndexOf(@"\");
 				   string path = filePath.Remove(index + 1);
-				   return path;
+
+				   Tuple<bool, string> isAlrdyRunning = new Tuple<bool, string>(true, path);
+				   return isAlrdyRunning;
 			   }
 		   });
 
 			await createLog;
 			bool usernameExist = await getUsername;
 
-			string hsPath = await getHsPath;
+			var hsState = await isWhereHsRunning;
+			bool isRunning = hsState.Item1;
+			string hsPath = hsState.Item2;
 
-			Tuple<bool, string> filesState = new Tuple<bool, string>(usernameExist, hsPath);
-
+			Tuple<bool, bool, string> filesState = new Tuple<bool, bool, string>(usernameExist, isRunning, hsPath);
 			return filesState;
 		}
 	}
