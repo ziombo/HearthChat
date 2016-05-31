@@ -9,6 +9,7 @@ using WindowsInput.Native;
 using System.Collections;
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 
 namespace HearthChatWinform
 {
@@ -36,6 +37,7 @@ namespace HearthChatWinform
 			this.MinimumSize = new System.Drawing.Size(this.Width, this.Height);
 
 			await ConnectAsync();
+
 
 			var hsState = await FilesChecker.IsHsRunning();
 			string hsPath = hsState.Item3;
@@ -156,7 +158,7 @@ namespace HearthChatWinform
 
 		private async Task<bool> ConnectAsync()
 		{
-			var kek = Task.Factory.StartNew<Task<bool>>( async () =>
+			var connectToChatHub = Task.Run<bool>( async () =>
 			{
 				hubConnection = new HubConnection(ServerURI);
 				chat = hubConnection.CreateHubProxy("ChatHub");
@@ -201,8 +203,8 @@ namespace HearthChatWinform
 				}
 				return true;
 			});
-			await kek;
-			return true;
+			bool isConnectedToChatHub = await connectToChatHub;
+			return isConnectedToChatHub;
 
 			#region Old way to connect
 			//hubConnection = new HubConnection(ServerURI);
