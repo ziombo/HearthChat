@@ -50,6 +50,7 @@
 			this.lblProvideName = new System.Windows.Forms.Label();
 			this.chckTop = new System.Windows.Forms.CheckBox();
 			this.transparencyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.picConnLoad = new System.Windows.Forms.PictureBox();
 			((System.ComponentModel.ISupportInitialize)(this.picLoad)).BeginInit();
 			this.panelRunHs.SuspendLayout();
 			this.panelDc.SuspendLayout();
@@ -57,6 +58,7 @@
 			this.panelWaitMatch.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
 			this.panelGetName.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.picConnLoad)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// btnSend
@@ -110,13 +112,15 @@
 			this.btnConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.btnConnect.Enabled = false;
 			this.btnConnect.Font = new System.Drawing.Font("Microsoft Sans Serif", 25F);
-			this.btnConnect.Location = new System.Drawing.Point(20, 223);
+			this.btnConnect.Location = new System.Drawing.Point(20, 263);
 			this.btnConnect.Name = "btnConnect";
 			this.btnConnect.Size = new System.Drawing.Size(344, 113);
 			this.btnConnect.TabIndex = 4;
 			this.btnConnect.Text = "Reconnect";
 			this.btnConnect.UseVisualStyleBackColor = true;
+			this.btnConnect.Visible = false;
 			this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
 			// 
 			// lblWho
@@ -184,9 +188,11 @@
 			this.panelRunHs.Name = "panelRunHs";
 			this.panelRunHs.Size = new System.Drawing.Size(384, 436);
 			this.panelRunHs.TabIndex = 11;
+			this.panelRunHs.Visible = false;
 			// 
 			// panelDc
 			// 
+			this.panelDc.Controls.Add(this.picConnLoad);
 			this.panelDc.Controls.Add(this.lblDc);
 			this.panelDc.Controls.Add(this.btnConnect);
 			this.panelDc.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -194,7 +200,6 @@
 			this.panelDc.Name = "panelDc";
 			this.panelDc.Size = new System.Drawing.Size(384, 436);
 			this.panelDc.TabIndex = 12;
-			this.panelDc.Visible = false;
 			// 
 			// lblDc
 			// 
@@ -206,6 +211,7 @@
 			this.lblDc.Size = new System.Drawing.Size(366, 35);
 			this.lblDc.TabIndex = 5;
 			this.lblDc.Text = "Disconnected from server";
+			this.lblDc.Visible = false;
 			// 
 			// panelChat
 			// 
@@ -249,7 +255,7 @@
 			this.pictureBox1.Anchor = System.Windows.Forms.AnchorStyles.None;
 			this.pictureBox1.Image = global::HearthChatWinform.Properties.Resources.hourglass;
 			this.pictureBox1.InitialImage = null;
-			this.pictureBox1.Location = new System.Drawing.Point(135, 170);
+			this.pictureBox1.Location = new System.Drawing.Point(135, 180);
 			this.pictureBox1.Name = "pictureBox1";
 			this.pictureBox1.Size = new System.Drawing.Size(114, 118);
 			this.pictureBox1.TabIndex = 1;
@@ -320,17 +326,26 @@
 			this.transparencyToolStripMenuItem.Size = new System.Drawing.Size(90, 20);
 			this.transparencyToolStripMenuItem.Text = "Transparency";
 			// 
+			// picConnLoad
+			// 
+			this.picConnLoad.Image = global::HearthChatWinform.Properties.Resources.Loader;
+			this.picConnLoad.Location = new System.Drawing.Point(159, 180);
+			this.picConnLoad.Name = "picConnLoad";
+			this.picConnLoad.Size = new System.Drawing.Size(66, 70);
+			this.picConnLoad.TabIndex = 6;
+			this.picConnLoad.TabStop = false;
+			// 
 			// Form1
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(384, 436);
 			this.Controls.Add(this.chckTop);
+			this.Controls.Add(this.panelDc);
+			this.Controls.Add(this.panelRunHs);
+			this.Controls.Add(this.panelWaitMatch);
 			this.Controls.Add(this.panelChat);
 			this.Controls.Add(this.panelGetName);
-			this.Controls.Add(this.panelWaitMatch);
-			this.Controls.Add(this.panelRunHs);
-			this.Controls.Add(this.panelDc);
 			this.Icon = global::HearthChatWinform.Properties.Resources.BigVer2;
 			this.MaximizeBox = false;
 			this.Name = "Form1";
@@ -351,6 +366,7 @@
 			((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
 			this.panelGetName.ResumeLayout(false);
 			this.panelGetName.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.picConnLoad)).EndInit();
 			this.ResumeLayout(false);
 			this.PerformLayout();
 
@@ -380,6 +396,7 @@
 		private System.Windows.Forms.Label lblProvideName;
 		private System.Windows.Forms.CheckBox chckTop;
 		private System.Windows.Forms.ToolStripMenuItem transparencyToolStripMenuItem;
+		private System.Windows.Forms.PictureBox picConnLoad;
 	}
 }
 

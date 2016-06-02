@@ -36,27 +36,38 @@ namespace HearthChatWinform
 		{
 			this.MinimumSize = new System.Drawing.Size(this.Width, this.Height);
 
-			await ConnectAsync();
+			bool connectedToChatHub = await ConnectAsync();
 
-
-			var hsState = await FilesChecker.IsHsRunning();
-			string hsPath = hsState.Item3;
-			hsPath += "Hearthstone_Data";
-			HsPath = hsPath;
-
-			// no name file or is invalid
-			if (hsState.Item1 == false)
+			if (connectedToChatHub == false)
 			{
-				panelGetName.Visible = true;
-				panelRunHs.Visible = false;
-				txtProvideName.Focus();
+				btnConnect.Enabled = true;
+				btnConnect.Visible = true;
+				lblDc.Visible = true;
+				picConnLoad.Visible = false;
 			}
-			// name file exists and is valid
 			else
 			{
-				ReadFromNameFile();
-				WaitForMatch();
-				NameGetter.CheckLogFile(hsPath);
+				panelDc.Visible = false;
+				panelRunHs.Visible = true;
+				var hsState = await FilesChecker.IsHsRunning();
+				string hsPath = hsState.Item2;
+				hsPath += "Hearthstone_Data";
+				HsPath = hsPath;
+
+				// no name file or is invalid
+				if (hsState.Item1 == false)
+				{
+					panelGetName.Visible = true;
+					panelRunHs.Visible = false;
+					txtProvideName.Focus();
+				}
+				// name file exists and is valid
+				else
+				{
+					ReadFromNameFile();
+					WaitForMatch();
+					NameGetter.CheckLogFile(hsPath);
+				}
 			}
 		}	
 
@@ -138,7 +149,41 @@ namespace HearthChatWinform
 		/* panelDc */
 		private async void btnConnect_Click(object sender, EventArgs e)
 		{
-			await ConnectAsync();
+			picConnLoad.Visible = true;
+			lblDc.Visible = false;
+			btnConnect.Enabled = false;
+
+			bool connectedToChatHub = await ConnectAsync();
+			if(connectedToChatHub == false)
+			{
+				picConnLoad.Visible = false;
+				btnConnect.Enabled = true;
+				lblDc.Visible = true;
+			}
+			else
+			{
+				panelDc.Visible = false;
+				panelRunHs.Visible = true;
+				var hsState = await FilesChecker.IsHsRunning();
+				string hsPath = hsState.Item2;
+				hsPath += "Hearthstone_Data";
+				HsPath = hsPath;
+
+				// no name file or is invalid
+				if (hsState.Item1 == false)
+				{
+					panelGetName.Visible = true;
+					panelRunHs.Visible = false;
+					txtProvideName.Focus();
+				}
+				// name file exists and is valid
+				else
+				{
+					ReadFromNameFile();
+					WaitForMatch();
+					NameGetter.CheckLogFile(hsPath);
+				}
+			}
 		}
 
 		/* panelGetName */
@@ -191,6 +236,7 @@ namespace HearthChatWinform
 					}
 					))
 				);
+
 				try
 				{
 					await hubConnection.Start();
@@ -198,7 +244,7 @@ namespace HearthChatWinform
 				catch (HttpRequestException)
 				{
 					//TODO: show dc panel and give "couldnt connect" msg
-
+					return false;
 
 				}
 				return true;
@@ -272,11 +318,6 @@ namespace HearthChatWinform
 			}
 		}
 
-		private void hubConnection_Closed()
-		{
-			//todo show panel dc
-		}
-
 		private void AppendMsg(string name, string message)
 		{
 			if (isGrouped)
@@ -300,8 +341,8 @@ namespace HearthChatWinform
 
 		private void WaitForMatch()
 		{
-			panelRunHs.Visible = false;
 			panelWaitMatch.Visible = true;
+			panelRunHs.Visible = false;
 		}
 
 		private void MatchStarted()

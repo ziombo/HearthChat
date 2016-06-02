@@ -14,9 +14,9 @@ namespace HearthChatWinform
 		static string user = Environment.UserName;
 		static string path = @"C:\Users\" + user + @"\AppData\Local\HearthChat";
 
-		public async static Task<Tuple<bool, bool, string>> IsHsRunning()
+		public async static Task<Tuple<bool, string>> IsHsRunning()
 		{		
-			var createLog = Task.Factory.StartNew<bool>(() =>
+			var createLogInstruction = Task.Run<bool>(() =>
 			{
 				string username = Environment.UserName;
 				string logPath = @"C:\Users\" + username + @"\AppData\Local\Blizzard\Hearthstone\log.config";
@@ -51,7 +51,7 @@ ConsolePrinting = true");
 				return true;
 			});
 
-			var getUsername = Task.Factory.StartNew<bool>(() =>
+			var getUsername = Task.Run<bool>(() =>
 			{
 				// check if name dir exists
 				if (Directory.Exists(path))
@@ -90,7 +90,7 @@ ConsolePrinting = true");
 			});
 
 
-			var isWhereHsRunning = Task.Factory.StartNew<Tuple<bool, string>>(() =>
+			var isWhereHsRunning = Task.Run<string>(() =>
 		   {
 		   Process[] processCheck = Process.GetProcessesByName("Hearthstone");
 		   // HS not running
@@ -112,8 +112,7 @@ ConsolePrinting = true");
 				   string path = filePath.Remove(index + 1);
 				   watcher.Stop();
 
-				   Tuple<bool, string> isAlrdyRunning = new Tuple<bool, string>(false, path);
-				   return isAlrdyRunning;
+				   return path;
 				   }
 			   }
 			   // HS already running
@@ -123,19 +122,16 @@ ConsolePrinting = true");
 				   int index = filePath.LastIndexOf(@"\");
 				   string path = filePath.Remove(index + 1);
 
-				   Tuple<bool, string> isAlrdyRunning = new Tuple<bool, string>(true, path);
-				   return isAlrdyRunning;
+				   return path;
 			   }
 		   });
 
-			await createLog;
+			await createLogInstruction;
+
 			bool usernameExist = await getUsername;
+			string hsPath = await isWhereHsRunning;
 
-			var hsState = await isWhereHsRunning;
-			bool isRunning = hsState.Item1;
-			string hsPath = hsState.Item2;
-
-			Tuple<bool, bool, string> filesState = new Tuple<bool, bool, string>(usernameExist, isRunning, hsPath);
+			Tuple<bool, string> filesState = new Tuple<bool, string>(usernameExist, hsPath);
 			return filesState;
 		}
 	}
